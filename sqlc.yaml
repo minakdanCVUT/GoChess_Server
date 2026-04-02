@@ -1,0 +1,35 @@
+version: "2"
+sql:
+  - schema: "internal/db/sql/schema.sql"
+    queries: "internal/db/sql/queries/"
+    engine: "postgresql"
+    gen:
+      go:
+        sql_package: "pgx/v5"
+        package: "db"
+        out: "internal/db"
+        emit_json_tags: true
+        overrides:
+          - column: "users.email_verified_at"
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+          - column: "games.winner_id"
+            go_type:
+              type: "string"
+              pointer: true
+          - column: "games.end_reason"
+            go_type:
+              type: "string"
+              pointer: true
+          - column: "games.started_at"
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+          - column: "games.finished_at"
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
