@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgtype"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/minakdanCVUT/GoChess/internal/apperr"
 	"github.com/minakdanCVUT/GoChess/internal/db"
@@ -95,11 +93,9 @@ func (h *UsersHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UsersHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	var userID pgtype.UUID
-
-	err := userID.Scan(r.PathValue("user_id"))
+	userID, err := h.service.ExtractUserIDFromContext(r.Context())
 	if err != nil {
-		apperr.HandleError(w, apperr.ErrUserNotFound)
+		apperr.HandleError(w, err)
 		return
 	}
 

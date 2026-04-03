@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"errors"
 	"log"
 
@@ -12,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/minakdanCVUT/GoChess/internal/apperr"
 	"github.com/minakdanCVUT/GoChess/internal/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const POSTGRES_UNIQUE_ERROR_CODE = "23505"
@@ -24,31 +23,30 @@ func NewUserService(q *db.Queries) *UserService {
 	return &UserService{queries: q}
 }
 
-func generateRandomToken(length int) string {
-	b := make([]byte, length)
-	if _, err := rand.Read(b); err != nil {
-		return ""
-	}
-	return hex.EncodeToString(b)
-}
-
 func (s *UserService) Login(ctx context.Context, login string, password string) (*db.User, string, error) {
 	user, err := s.queries.GetUserByLogin(ctx, login)
 	if err != nil {
 		return nil, "", apperr.ErrUserNotFound
 	}
 
-	if user.Password != password {
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
 		return nil, "", apperr.ErrInvalidCredentials
 	}
 
-	token := generateRandomToken(16)
+	token, _ := s.GenerateToken(user.ID.String())
 
 	log.Printf("Залогинился юзер, username - %s", user.Username)
 	return &user, token, nil
 }
 
 func (s *UserService) Register(ctx context.Context, params *db.CreateUserParams) (*db.User, string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, "", apperr.ErrInternal
+	}
+	params.Password = string(hashedPassword)
+
 	user, err := s.queries.CreateUser(ctx, *params)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -58,7 +56,7 @@ func (s *UserService) Register(ctx context.Context, params *db.CreateUserParams)
 		return nil, "", apperr.ErrInternal
 	}
 
-	token := generateRandomToken(16)
+	token, _ := s.GenerateToken(user.ID.String())
 
 	return &user, token, nil
 }
