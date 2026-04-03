@@ -106,21 +106,25 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 }
 
 const getUserByLogin = `-- name: GetUserByLogin :one
-select id, username, password from users
+select id, first_name, last_name, username, email, email_verified, email_verified_at, password, created_at from users
 where email = $1 or username = $1
 limit 1
 `
 
-type GetUserByLoginRow struct {
-	ID       pgtype.UUID `json:"id"`
-	Username string      `json:"username"`
-	Password string      `json:"password"`
-}
-
-func (q *Queries) GetUserByLogin(ctx context.Context, email string) (GetUserByLoginRow, error) {
+func (q *Queries) GetUserByLogin(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByLogin, email)
-	var i GetUserByLoginRow
-	err := row.Scan(&i.ID, &i.Username, &i.Password)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Username,
+		&i.Email,
+		&i.EmailVerified,
+		&i.EmailVerifiedAt,
+		&i.Password,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
@@ -148,8 +152,8 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 
 const getUserStats = `-- name: GetUserStats :one
 SELECT
-    COUNT(*)                                                    AS total_games,
-    COUNT(*) FILTER (WHERE winner_id = $1)                     AS wins,
+    COUNT(*) AS total_games,
+    COUNT(*) FILTER (WHERE winner_id = $1) AS wins,
     COUNT(*) FILTER (WHERE winner_id != $1 AND winner_id IS NOT NULL) AS losses,
     COUNT(*) FILTER (WHERE winner_id IS NULL AND status = 'finished') AS draws
 FROM games
