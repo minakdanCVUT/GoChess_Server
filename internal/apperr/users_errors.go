@@ -38,6 +38,7 @@ var (
 	ErrJsonParsing          = NewAppError(http.StatusBadRequest, "Ошибка парсинга JSON")
 	ErrValidate             = NewAppError(http.StatusBadRequest, "Ошибка валидации")
 	ErrEmailOrUsernameInUse = NewAppError(http.StatusConflict, "Email или Username уже заняты")
+	ErrUnauthorized         = NewAppError(http.StatusUnauthorized, "Вы не авторизованы")
 )
 
 func HandleError(w http.ResponseWriter, err error) {
