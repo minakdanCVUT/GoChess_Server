@@ -2,15 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	//"strconv"
 	"github.com/go-playground/validator/v10"
 	"github.com/minakdanCVUT/GoChess/internal/apperr"
 	"github.com/minakdanCVUT/GoChess/internal/db"
@@ -35,12 +30,12 @@ func (h *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req requests.CreateUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Ошибка парсинга JSON", http.StatusBadRequest)
+		apperr.HandleError(w, apperr.ErrJsonParsing)
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		http.Error(w, "Ошибка валидации: "+err.Error(), http.StatusBadRequest)
+		apperr.HandleError(w, apperr.ErrValidate.WithMessage(err.Error()))
 		return
 	}
 
@@ -52,21 +47,11 @@ func (h *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		Password:  req.Password,
 	}
 
-	log.Printf("Регается пользователь - %s %s.\nUsername - %s, email - %s", params.FirstName, params.LastName, params.Username, params.Email)
-
-	user, err := h.queries.CreateUser(r.Context(), params)
+	user, token, err := h.service.Register(r.Context(), &params)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			log.Printf("Username или Email уже заняты - %s:%s", params.Username, params.Email)
-			http.Error(w, "Username или Email уже заняты", http.StatusConflict)
-			return
-		}
-		http.Error(w, "Не удалось создать пользователя", http.StatusInternalServerError)
+		apperr.HandleError(w, err)
 		return
 	}
-
-	token := generateRandomToken(16)
 
 	response := responses.AuthResponse{
 		Token:    token,
@@ -118,18 +103,13 @@ func (h *UsersHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.queries.GetUserByID(r.Context(), userID)
+	user, err := h.service.Profile(r.Context(), userID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "Пользователь не найден", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		apperr.HandleError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(user)
-
 }
