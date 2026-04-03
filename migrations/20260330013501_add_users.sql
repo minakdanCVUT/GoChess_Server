@@ -1,5 +1,7 @@
 -- +goose Up
-CREATE TABLE users (
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS users (
     id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     first_name        TEXT        NOT NULL,
     last_name         TEXT        NOT NULL,
@@ -12,5 +14,4 @@ CREATE TABLE users (
 );
 
 -- +goose Down
--- При откате просто удаляем таблицу users
-DROP TABLE users;
+DROP TABLE IF EXISTS users;
