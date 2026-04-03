@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/minakdanCVUT/GoChess/internal/db"
 	"github.com/minakdanCVUT/GoChess/internal/handler"
+	"github.com/minakdanCVUT/GoChess/internal/service"
 )
 
 func main() {
@@ -35,7 +36,9 @@ func main() {
 
 	queries := db.New(pool)
 
-	userHandler := handler.NewUsersHandler(queries)
+	usersService := service.NewUserService(queries)
+
+	userHandler := handler.NewUsersHandler(usersService)
 
 	router := handler.RegisterUserRoutes(userHandler)
 
