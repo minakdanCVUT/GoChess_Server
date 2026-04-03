@@ -9,6 +9,7 @@ import (
 	"github.com/minakdanCVUT/GoChess/internal/db"
 	"github.com/minakdanCVUT/GoChess/internal/handler/requests"
 	"github.com/minakdanCVUT/GoChess/internal/handler/responses"
+	"github.com/minakdanCVUT/GoChess/internal/security"
 	"github.com/minakdanCVUT/GoChess/internal/service"
 )
 
@@ -28,12 +29,12 @@ func (h *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req requests.CreateUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		apperr.HandleError(w, apperr.ErrJsonParsing)
+		apperr.HandleError(w, apperr.ErrJsonParsing())
 		return
 	}
 
 	if err := h.validate.Struct(req); err != nil {
-		apperr.HandleError(w, apperr.ErrValidate.WithMessage(err.Error()))
+		apperr.HandleError(w, apperr.ErrValidate().WithMessage(err.Error()))
 		return
 	}
 
@@ -66,12 +67,12 @@ func (h *UsersHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	var request requests.LoginUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		apperr.HandleError(w, apperr.ErrJsonParsing)
+		apperr.HandleError(w, apperr.ErrJsonParsing())
 		return
 	}
 
 	if err := h.validate.Struct(request); err != nil {
-		apperr.HandleError(w, apperr.ErrValidate.WithMessage(err.Error()))
+		apperr.HandleError(w, apperr.ErrValidate().WithMessage(err.Error()))
 		return
 	}
 
@@ -93,7 +94,7 @@ func (h *UsersHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UsersHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
-	userID, err := h.service.ExtractUserIDFromContext(r.Context())
+	userID, err := security.ExtractUserIDFromContext(r.Context())
 	if err != nil {
 		apperr.HandleError(w, err)
 		return
