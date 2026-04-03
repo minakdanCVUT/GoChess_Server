@@ -4,19 +4,24 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/minakdanCVUT/GoChess/internal/db"
 	"github.com/minakdanCVUT/GoChess/internal/handler"
+	"github.com/minakdanCVUT/GoChess/internal/security"
 	"github.com/minakdanCVUT/GoChess/internal/service"
 )
 
 func main() {
-	ctx := context.Background()
-	connStr := "postgres://user:pass@localhost:55432/chess_db?sslmode=disable"
+	godotenv.Load()
+	security.Init()
 
-	config, err := pgxpool.ParseConfig(connStr)
+	ctx := context.Background()
+
+	config, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal("Failed to parse pool config:", err)
 	}
@@ -42,8 +47,9 @@ func main() {
 
 	router := handler.RegisterUserRoutes(userHandler)
 
-	log.Println("Server started on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	addr := os.Getenv("SERVER_ADDR")
+	log.Printf("Server started on http://localhost%s", addr)
+	if err := http.ListenAndServe(addr, router); err != nil {
 		log.Fatal("Server failed:", err)
 	}
 }

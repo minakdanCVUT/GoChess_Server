@@ -3,7 +3,9 @@ package security
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -16,7 +18,15 @@ type contextKey string
 
 const UserIDKey contextKey = "user_id"
 
-var jwtSecret = []byte("L8thPONOMLXik2zfkF1SzxrpAqS2c137pJzTqAOBvka/JkYovv+Mnd0wMPFumGoaXSQIypehdQXsr/zqm7hkEi0jYV0hBpp1vrWDQcpwjgesntK1j3NucGdW5I5m1YntS/9VNFXprlJ5+hBKJhSdah14y7OMeS16W7M6PoV2hxedP6Aa4I3+ZVDTrX46mVQaGBpTx4ZGMFId5LCB9HvkbmujM143F3fPqVDAPTpZDcvR7Ad1fv2VBwJQ2dLEG+iRZkNjBomHohF+r9R21N1nfl8DeslGWgTdOAm9wikOTbHZXk4aIbhcKiSvLNccO93ScW7MvC6W63jn60oXtlPvRw==%")
+var jwtSecret []byte
+
+func Init() {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		log.Fatal("JWT_SECRET is not set")
+	}
+	jwtSecret = []byte(secret)
+}
 
 func GenerateToken(userID string) (string, error) {
 	claims := jwt.MapClaims{
