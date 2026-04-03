@@ -27,7 +27,10 @@ func NewUserService(q *db.Queries) *UserService {
 func (s *UserService) Login(ctx context.Context, login string, password string) (*db.User, string, error) {
 	user, err := s.queries.GetUserByLogin(ctx, login)
 	if err != nil {
-		return nil, "", apperr.ErrUserNotFound()
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, "", apperr.ErrUserNotFound()
+		}
+		return nil, "", apperr.ErrInternal()
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
