@@ -32,11 +32,12 @@ func (e *AppError) WithMessage(msg string) *AppError {
 }
 
 var (
-	ErrUserNotFound       = NewAppError(http.StatusNotFound, "Пользователь не найден")
-	ErrInvalidCredentials = NewAppError(http.StatusUnauthorized, "Неверный логин или пароль")
-	ErrInternal           = NewAppError(http.StatusInternalServerError, "Внутренняя ошибка сервера")
-	ErrJsonParsing        = NewAppError(http.StatusBadRequest, "Ошибка парсинга JSON")
-	ErrValidate           = NewAppError(http.StatusBadRequest, "Ошибка валидации")
+	ErrUserNotFound         = NewAppError(http.StatusNotFound, "Пользователь не найден")
+	ErrInvalidCredentials   = NewAppError(http.StatusUnauthorized, "Неверный логин или пароль")
+	ErrInternal             = NewAppError(http.StatusInternalServerError, "Внутренняя ошибка сервера")
+	ErrJsonParsing          = NewAppError(http.StatusBadRequest, "Ошибка парсинга JSON")
+	ErrValidate             = NewAppError(http.StatusBadRequest, "Ошибка валидации")
+	ErrEmailOrUsernameInUse = NewAppError(http.StatusConflict, "Email или Username уже заняты")
 )
 
 func HandleError(w http.ResponseWriter, err error) {
