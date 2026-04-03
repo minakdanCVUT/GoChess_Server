@@ -7,46 +7,84 @@ import (
 	"net/http"
 )
 
+type ErrKind string
+
+const (
+	KindNotFound     ErrKind = "not_found"
+	KindUnauthorized ErrKind = "unauthorized"
+	KindInternal     ErrKind = "internal"
+	KindBadRequest   ErrKind = "bad_request"
+	KindConflict     ErrKind = "conflict"
+)
+
 type AppError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Kind    ErrKind `json:"-"`
+	Message string  `json:"message"`
+	cause   error
 }
 
-// реализация интерфейса error
 func (e *AppError) Error() string {
 	return e.Message
 }
-
-func NewAppError(code int, msg string) *AppError {
-	return &AppError{
-		Code:    code,
-		Message: msg,
-	}
+func (e *AppError) Unwrap() error {
+	return e.cause
 }
 
 func (e *AppError) WithMessage(msg string) *AppError {
 	return &AppError{
-		Code:    e.Code,
+		Kind:    e.Kind,
 		Message: e.Message + ": " + msg,
+		cause:   e,
 	}
 }
 
-var (
-	ErrUserNotFound         = NewAppError(http.StatusNotFound, "Пользователь не найден")
-	ErrInvalidCredentials   = NewAppError(http.StatusUnauthorized, "Неверный логин или пароль")
-	ErrInternal             = NewAppError(http.StatusInternalServerError, "Внутренняя ошибка сервера")
-	ErrJsonParsing          = NewAppError(http.StatusBadRequest, "Ошибка парсинга JSON")
-	ErrValidate             = NewAppError(http.StatusBadRequest, "Ошибка валидации")
-	ErrEmailOrUsernameInUse = NewAppError(http.StatusConflict, "Email или Username уже заняты")
-	ErrUnauthorized         = NewAppError(http.StatusUnauthorized, "Вы не авторизованы")
-)
+func ErrUserNotFound() *AppError {
+	return &AppError{Kind: KindNotFound, Message: "User not found"}
+}
+
+func ErrInvalidCredentials() *AppError {
+	return &AppError{Kind: KindUnauthorized, Message: "Invalid login or password"}
+}
+
+func ErrInternal() *AppError {
+	return &AppError{Kind: KindInternal, Message: "Internal server error"}
+}
+
+func ErrJsonParsing() *AppError {
+	return &AppError{Kind: KindBadRequest, Message: "Failed to parse JSON"}
+}
+
+func ErrValidate() *AppError {
+	return &AppError{Kind: KindBadRequest, Message: "Validation error"}
+}
+
+func ErrEmailOrUsernameInUse() *AppError {
+	return &AppError{Kind: KindConflict, Message: "Email or username is already taken"}
+}
+
+func ErrUnauthorized() *AppError {
+	return &AppError{Kind: KindUnauthorized, Message: "Unauthorized"}
+}
+
+func httpStatus(kind ErrKind) int {
+	switch kind {
+	case KindNotFound:
+		return http.StatusNotFound
+	case KindUnauthorized:
+		return http.StatusUnauthorized
+	case KindBadRequest:
+		return http.StatusBadRequest
+	case KindConflict:
+		return http.StatusConflict
+	default:
+		return http.StatusInternalServerError
+	}
+}
 
 func HandleError(w http.ResponseWriter, err error) {
-	var appErr *AppError
-
-	if errors.As(err, &appErr) {
+	if appErr, ok := errors.AsType[*AppError](err); ok {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(appErr.Code)
+		w.WriteHeader(httpStatus(appErr.Kind))
 		json.NewEncoder(w).Encode(appErr)
 		return
 	}
