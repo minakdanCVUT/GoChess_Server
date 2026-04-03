@@ -18,7 +18,7 @@ func main() {
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		log.Fatal("Ошибка конфигурации пула:", err)
+		log.Fatal("Failed to parse pool config:", err)
 	}
 
 	config.MaxConns = 10
@@ -26,12 +26,12 @@ func main() {
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		log.Fatal("Не удалось создать пул:", err)
+		log.Fatal("Failed to create connection pool:", err)
 	}
 	defer pool.Close()
 
 	if err := pool.Ping(ctx); err != nil {
-		log.Fatal("База не отвечает:", err)
+		log.Fatal("Database is unreachable:", err)
 	}
 
 	queries := db.New(pool)
@@ -42,8 +42,8 @@ func main() {
 
 	router := handler.RegisterUserRoutes(userHandler)
 
-	log.Println("🚀 Сервер запущен на http://localhost:8080")
+	log.Println("Server started on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", router); err != nil {
-		log.Fatal("Сервер упал:", err)
+		log.Fatal("Server failed:", err)
 	}
 }
