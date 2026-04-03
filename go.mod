@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/go-playground/validator/v10 v10.30.2
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.9.1
 )
 
