@@ -1,6 +1,17 @@
 -- +goose Up
-CREATE TYPE IF NOT EXISTS game_status AS ENUM ('waiting', 'ongoing', 'finished', 'abandoned');
-CREATE TYPE IF NOT EXISTS end_reason  AS ENUM ('checkmate', 'resign', 'timeout', 'draw_agreement', 'stalemate');
+-- +goose StatementBegin
+DO $$ BEGIN
+    CREATE TYPE game_status AS ENUM ('waiting', 'ongoing', 'finished', 'abandoned');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+-- +goose StatementEnd
+
+-- +goose StatementBegin
+DO $$ BEGIN
+    CREATE TYPE end_reason AS ENUM ('checkmate', 'resign', 'timeout', 'draw_agreement', 'stalemate');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+-- +goose StatementEnd
 
 CREATE TABLE IF NOT EXISTS games (
     id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
