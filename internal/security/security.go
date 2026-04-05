@@ -53,14 +53,18 @@ func ExtractUserIDFromContext(ctx context.Context) (pgtype.UUID, error) {
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// taking out the Authorization header: Bearer <token>
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
+		tokenStr := r.Header.Get("Authorization")
+		tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
+
+		// if headers are empty, searching in the url queries for websocket
+		if tokenStr == "" {
+			tokenStr = r.URL.Query().Get("token")
+		}
+
+		if tokenStr == "" {
 			apperr.HandleError(w, apperr.ErrUnauthorized())
 			return
 		}
-
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// check the signature and expiration date
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {

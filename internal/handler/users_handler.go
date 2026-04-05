@@ -25,6 +25,16 @@ func NewUsersHandler(s *service.UserService) *UsersHandler {
 	}
 }
 
+// CreateUser godoc
+// @Summary      Register a new user
+// @Description  Create a new user account and get an auth token
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        request body requests.CreateUserRequest true "User registration data"
+// @Success      201 {object} responses.AuthResponse
+// @Failure      400 {object} apperr.AppError
+// @Router       /users/register [post]
 func (h *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req requests.CreateUserRequest
 
@@ -63,6 +73,16 @@ func (h *UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// LoginUser godoc
+// @Summary      Login user
+// @Description  Authenticate user and return JWT token
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        request body requests.LoginUserRequest true "Login credentials"
+// @Success      200 {object} responses.AuthResponse
+// @Failure      401 {object} apperr.AppError
+// @Router       /users/login [post]
 func (h *UsersHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	var request requests.LoginUserRequest
 
@@ -93,7 +113,17 @@ func (h *UsersHandler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// GetProfile godoc
+// @Summary      Get current user profile
+// @Description  Returns profile data for the authenticated user
+// @Tags         users
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200 {object} responses.UserResponse
+// @Failure      401 {object} apperr.AppError
+// @Router       /users/profile [get]
 func (h *UsersHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
+	// extract user id, that AuthMiddleware put in context from JWT
 	userID, err := security.ExtractUserIDFromContext(r.Context())
 	if err != nil {
 		apperr.HandleError(w, err)
@@ -106,7 +136,16 @@ func (h *UsersHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response := responses.UserResponse{
+		ID:            user.ID.String(),
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		Username:      user.Username,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(response)
 }
