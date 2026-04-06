@@ -17,6 +17,44 @@ import (
 type contextKey string
 
 const UserIDKey contextKey = "user_id"
+const GameTypeKey contextKey = "game_type"
+
+type GameType string
+
+const (
+	GameTypeBlitz  GameType = "blitz"
+	GameTypeRapid  GameType = "rapid"
+	GameTypeRating GameType = "rating"
+)
+
+func AllGameTypes() []GameType {
+	return []GameType{
+		GameTypeBlitz,
+		GameTypeRapid,
+		GameTypeRating,
+	}
+}
+
+func IsValidGameType(t string) bool {
+	switch GameType(t) {
+	case GameTypeBlitz, GameTypeRapid, GameTypeRating:
+		return true
+	}
+	return false
+}
+
+func GetGameTypeFromString(t string) GameType {
+	var zero GameType
+	switch t {
+	case "blitz":
+		return GameTypeBlitz
+	case "rapid":
+		return GameTypeRapid
+	case "rating":
+		return GameTypeRating
+	}
+	return zero
+}
 
 var jwtSecret []byte
 
@@ -49,6 +87,14 @@ func ExtractUserIDFromContext(ctx context.Context) (pgtype.UUID, error) {
 		return zero, apperr.ErrUnauthorized()
 	}
 	return userID, nil
+}
+
+func ExtractGameTypeFromContext(ctx context.Context) (string, error) {
+	gameType, ok := ctx.Value(GameTypeKey).(string)
+	if !ok {
+		return "", apperr.ErrInternal()
+	}
+	return gameType, nil
 }
 
 func AuthMiddleware(next http.Handler) http.Handler {
@@ -84,6 +130,19 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		userID := claims["user_id"].(string)
 
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func QueriesMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gameType := r.URL.Query().Get("game_type")
+
+		if !IsValidGameType(gameType) || gameType == "" {
+			apperr.HandleError(w, apperr.ErrInternal())
+			return
+		}
+		ctx := context.WithValue(r.Context(), GameTypeKey, gameType)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
