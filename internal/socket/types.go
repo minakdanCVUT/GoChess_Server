@@ -4,6 +4,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type MessageEvent struct {
+	Sender  *Client
+	Payload WSRequest
+}
+
 type Game struct {
 	ID          pgtype.UUID
 	BlackPlayer *Client
