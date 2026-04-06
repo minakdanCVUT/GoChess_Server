@@ -33,6 +33,7 @@ func RegisterRoutes(userH *UsersHandler, hub *socket.Hub) http.Handler {
 
 	r.Group(func(r chi.Router) {
 		r.Use(security.AuthMiddleware)
+		r.Use(security.QueriesMiddleware)
 		r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
 			socket.ServeWs(hub, w, r)
 		})
